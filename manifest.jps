@@ -1,0 +1,56 @@
+type: install
+id: peertube
+name: PeerTube
+homepage: https://joinpeertube.org/
+baseUrl: https://raw.githubusercontent.com/reclaimhosting/peertube-jps/master
+logo: images/peertube_logo.png
+
+description: 
+  text: PeerTube, developed by Framasoft, is the free and decentralized alternative to video platforms. Anyone with a modicum of technical skills can host a PeerTube server, aka an instance. Each instance hosts its users and their videos. In this way, every instance is created, moderated and maintained independently by various administrators.
+  
+categories:
+- apps/popular
+- apps/collaboration
+- apps/education
+
+globals:
+  password: ${fn.password}
+  dbpassword: ${fn.password}
+
+nodes:
+  nodeType: dockerengine
+  nodeGroup: cp
+  cloudlets: 14
+  extip: true
+  displayName: PeerTube
+
+onInstall: setup
+
+actions:
+  setup:
+    cmd[cp]: |-
+      curl https://raw.githubusercontent.com/chocobozzz/PeerTube/develop/support/docker/production/docker-compose.yml > docker-compose.yml;
+      curl https://raw.githubusercontent.com/Chocobozzz/PeerTube/develop/support/docker/production/.env > .env;
+      sed -i 's|<MY EMAIL ADDRESS>|${user.email}|g' .env;
+      sed -i 's|<MY DOMAIN>|${env.domain}|g' .env;
+      sed -i 's|<MY POSTGRES PASSWORD>|${globals.dbpassword}|g' .env;
+      sed -i 's|<MY POSTGRES USERNAME>|peertubedb|g' .env;
+      echo 'PT_INITIAL_ROOT_PASSWORD=${globals.password}' >> .env;
+      mkdir -p docker-volume/nginx;
+      curl https://raw.githubusercontent.com/Chocobozzz/PeerTube/develop/support/nginx/peertube > docker-volume/nginx/peertube;
+      mkdir -p docker-volume/certbot;
+      docker run --rm --name certbot -p 80:80 -v "$(pwd)/docker-volume/certbot/conf:/etc/letsencrypt" certbot/certbot certonly --standalone -d ${env.domain} --non-interactive --agree-tos -m ${user.email};
+      docker-compose up -d;
+      
+      #Checking of container is up and running
+      until [ "`/usr/bin/docker inspect -f {{.State.Running}} root_webserver_1`"=="true" ]; do
+        sleep 1
+        print '.'
+      done;
+      echo OK
+ssl: false
+skipNodeEmails: true
+success: |
+  **PeerTube URL**: [https://${env.domain}/](https://${env.domain}/)
+  **Username**: root
+  **Password**: ${globals.password}
