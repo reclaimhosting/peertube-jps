@@ -34,7 +34,9 @@ actions:
       sed -i 's|<MY EMAIL ADDRESS>|${user.email}|g' .env;
       sed -i 's|<MY DOMAIN>|${env.domain}|g' .env;
       sed -i 's|<MY POSTGRES PASSWORD>|${globals.dbpassword}|g' .env;
+      sed -i 's|$POSTGRES_PASSWORD|${globals.dbpassword}|g' .env;
       sed -i 's|<MY POSTGRES USERNAME>|peertubedb|g' .env;
+      sed -i 's|$POSTGRES_USER|peertubedb|g' .env;
       echo 'PT_INITIAL_ROOT_PASSWORD=${globals.password}' >> .env;
       mkdir -p docker-volume/nginx;
       curl https://raw.githubusercontent.com/Chocobozzz/PeerTube/develop/support/nginx/peertube > docker-volume/nginx/peertube;
